@@ -1,0 +1,93 @@
+<html>
+<head>
+  <title>Spotify Vote</title>
+
+  <script
+  src="https://code.jquery.com/jquery-3.3.1.js"
+  integrity="sha256-2Kok7MbOyxpgUVvAk/HJ2jigOSYS2auK4Pfzbm7uH60="
+  crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/css/materialize.min.css">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/js/materialize.min.js"></script>
+  <style>
+  .btn-large{
+    height:75px;
+    width:100%;
+    font-size:xx-large;
+  }
+  </style>
+</head>
+<body>
+  <h1>Currently Playing</h1>
+  <div class='card horizontal'>
+    <div class='card-image' id="cover">
+    </div>
+    <div class='card-stacked'>
+      <div class='card-content'>
+        <h4>Artist: <span id="currentArtist"></span></h4>
+        <h4>Song: <span id="currentSong"></span></h4>
+      </div>
+      <div class="card-action">
+        <div class="progress">
+          <div class="determinate" id="progress"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="content">
+    <h1>Vote for the next song</h1>
+    <div id="songs"></div>
+  </div>
+  <h1>Add songs to the mix
+    <a class="btn-floating btn-large waves-effect waves-light red" href="https://open.spotify.com/user/criggs10/playlist/3xzgrZkVY9wA6xxcvtrp2H?si=sMP4suezTsqGjS3l2sXVcg">
+      <i class="material-icons">add</i>
+    </a>
+  </h1>
+  <script>
+  var current=null;
+  function getSongs(){
+    $.get("/getSongs",function(songs){
+      songDisplay="";
+      for(i=0;i<songs.length;i++){
+        songDisplay+="<div class='card horizontal'><div class='card-image'><img height=275 src='"+
+          songs[i].track.album.images[0].url+"'></div>"+"<div class='card-stacked'><div class='card-content'><h4>Song: "+
+          songs[i].track.name+"</h4><h4>Artist: "+songs[i].track.artists[0].name+
+          "</h4></div><div class='card-action'><button class='btn-large' onclick='"+
+          "$.post(\"/vote\",{\"song\":\""+songs[i].track.id+
+          "\"},function(data){$(\"#content\").html(\"<h2>Thank you for voting</h2>\");});'>"+
+          "Vote</button></div></div></div>";
+      }
+      $("#songs").html(songDisplay);
+    });
+  }
+
+  function getCurrent(){
+    $.get("/nowPlaying",function(data){
+      current=data;
+      $("#cover").html("<img height=220 src='"+data.imgSrc+"'>");
+      $("#currentArtist").html(data.artist);
+      $("#currentSong").html(data.song);
+    });
+  }
+
+  function updateTime(){
+    var d = new Date;
+    if((current.timeStarted+current.length)>d.getTime()){
+      $("#progress").width(((d.getTime()-current.timeStarted)/current.length)*100+"%");
+    }
+    else{
+      location.reload();
+    }
+  }
+
+  getSongs();
+  getCurrent();
+  setInterval(updateTime,1000);
+
+  $("button").click(function(data){
+    $.post("/vote",{"song":id},function(data){
+      $("#songs").html("<h2>Thank you for voting</h2>");});
+  });
+  </script>
+</body>
+</html>
